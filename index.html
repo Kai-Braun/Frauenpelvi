@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BROWNS – Beckenboden Check</title>
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,Segoe UI;
+background:#fff6fa;
+padding:20px;
+}
+
+.card{
+max-width:720px;
+margin:auto;
+background:white;
+padding:25px;
+border-radius:22px;
+box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
+
+h2{color:#c04a8a}
+
+button{
+width:100%;
+padding:16px;
+margin:8px 0;
+border-radius:14px;
+border:none;
+background:#f6e8f0;
+font-size:16px;
+}
+
+button.primary{
+background:#c04a8a;
+color:white;
+font-weight:bold;
+}
+
+.score{
+font-size:48px;
+text-align:center;
+color:#c04a8a;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+<div class="card" id="app"></div>
+
+<script>
+
+let score = 0;
+let step = 0;
+
+const steps = [
+
+/* 1 */
+{ q:"Probleme mit unkontrollierbarem Harndrang?",
+  a:[
+    {t:"Ja", next:"freq"},
+    {t:"Nein", next:1}
+]},
+
+/* 1.1 */
+{ id:"freq",
+  q:"Wie oft pro Woche?",
+  a:[
+    {t:"1–2× pro Monat (+1)", s:1},
+    {t:"1–2× pro Woche (+2)", s:2},
+    {t:"3–5× pro Woche (+3)", s:3},
+    {t:"Täglich (+4)", s:4}
+]},
+
+/* 1.3 */
+{ q:"Wie hoch ist der Urinverlust?",
+  a:[
+    {t:"Kein (+0)", s:0},
+    {t:"Gering (+1)", s:1},
+    {t:"Mittel (+2)", s:2},
+    {t:"Groß (+4)", s:4}
+]},
+
+/* 2 */
+{ q:"Wie oft pro Tag Toilette?",
+  a:[
+    {t:"4–6 (+0)", s:0},
+    {t:"7–10 (+2)", s:2},
+    {t:">10 (+4)", s:4}
+]},
+
+/* 3 */
+{ q:"Wie oft nachts?",
+  a:[
+    {t:"Nie (+0)", s:0},
+    {t:"1× (+2)", s:2},
+    {t:">1× (+4)", s:4}
+]},
+
+/* 4 */
+{ q:"Häufig Blasenentzündungen?",
+  a:[
+    {t:"Ja", next:"entz"},
+    {t:"Nein", next:1}
+]},
+
+{ id:"entz",
+  q:"Wie oft?",
+  a:[
+    {t:"1–2/Jahr (+1)", s:1},
+    {t:"alle 3–4 Monate (+2)", s:2},
+    {t:"alle 1–2 Monate (+3)", s:3},
+    {t:"chronisch (+5)", s:5}
+]},
+
+/* 5 */
+{ q:"Binden/Einlagen im Alltag?",
+  a:[
+    {t:"Ja (+4)", s:4},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 6 */
+{ q:"Restharngefühl?",
+  a:[
+    {t:"Ja (+3)", s:3},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 7 */
+{ q:"Kinder geboren?",
+  a:[
+    {t:"Ja (+3)", s:3},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 8 */
+{ q:"Veränderungen der Libido?",
+  a:[
+    {t:"Ja (+4)", s:4},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 9 */
+{ q:"Schmerzen beim Sex?",
+  a:[
+    {t:"Ja (+4)", s:4},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 10 */
+{ q:"Probleme Orgasmus?",
+  a:[
+    {t:"Ja (+4)", s:4},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 11 */
+{ q:"Mit Sensibilität unzufrieden?",
+  a:[
+    {t:"Ja (+4)", s:4},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 12 */
+{ q:"Becken-/Rückenschmerzen?",
+  a:[
+    {t:"Ja", next:"pain"},
+    {t:"Nein", next:1}
+]},
+
+{ id:"pain",
+  q:"Wie oft Schmerzen?",
+  a:[
+    {t:"1–2/Monat (+1)", s:1},
+    {t:"1–2/Woche (+2)", s:2},
+    {t:"3–5/Woche (+4)", s:4},
+    {t:"Täglich (+5)", s:5}
+]},
+
+/* 13 */
+{ q:"OP im Beckenbereich?",
+  a:[
+    {t:"Ja (+5)", s:5},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 14 */
+{ q:"Organsenkung diagnostiziert?",
+  a:[
+    {t:"Ja (+5)", s:5},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 15 */
+{ q:"Bereits Übungen/Physio gemacht?",
+  a:[
+    {t:"Ja (+5)", s:5},
+    {t:"Nein (+0)", s:0}
+]},
+
+/* 16 */
+{ q:"Beeinträchtigung 1–10",
+  scale:true
+}
+];
+
+function render(){
+
+if(step>=steps.length){
+let block="10er Block";
+if(score>25)block="20er Block";
+if(score>50)block="30er Block";
+if(score>75)block="40er Block";
+
+app.innerHTML=`
+<h2>Ergebnis</h2>
+<div class="score">${score} / 100</div>
+<p><b>Empfehlung: ${block}</b></p>
+<button class="primary" onclick="restart()">Neuer Fragebogen</button>`;
+return;
+}
+
+let s = steps[step];
+
+let html=`<h2>${s.q}</h2>`;
+
+if(s.scale){
+for(let i=1;i<=10;i++)
+html+=`<button onclick="choose(${i})">${i}</button>`;
+}
+else{
+s.a.forEach(a=>{
+html+=`<button onclick='choose(${a.s||0}, "${a.next||""}")'>${a.t}</button>`;
+});
+}
+
+app.innerHTML=html;
+}
+
+function choose(val,next){
+score+=val;
+if(next){
+let idx=steps.findIndex(x=>x.id===next);
+step=idx;
+}else{
+step++;
+}
+render();
+}
+
+function restart(){
+score=0;step=0;render();
+}
+
+render();
+</script>
+</body>
+</html>
